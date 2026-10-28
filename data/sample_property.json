@@ -1,0 +1,17 @@
+{
+  "_note": "100% fictional demo data. The name, address and phone/email below do not belong to any real property or person.",
+  "name": "Maple Grove Residency",
+  "location": "Sector 99, Demo City",
+  "price": "85,00,000",
+  "currency": "INR",
+  "property_type": "3 BHK Apartment",
+  "features": [
+    "3 bedrooms",
+    "2 bathrooms",
+    "Modular kitchen",
+    "Covered parking",
+    "Balcony"
+  ],
+  "contact": "+91 90000 00000 | sales@example.com",
+  "cta": "Book a site visit today"
+}

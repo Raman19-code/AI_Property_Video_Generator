@@ -1,0 +1,10 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+# generated videos (the sample_* files are kept on purpose)
+outputs/*
+!outputs/sample_*
+!outputs/.gitkeep

@@ -1,0 +1,30 @@
+VIDEO SCRIPT
+============================================================
+
+Scene 1 (hook) - image #1 - 5.0s
+  Caption  : Maple Grove Residency | Sector 99, Demo City
+  Voice-over: Introducing Maple Grove Residency, in Sector 99, Demo City.
+
+Scene 2 (intro) - image #2 - 5.0s
+  Caption  : 3 BHK Apartment | Priced at ₹85,00,000
+  Voice-over: This 3 BHK Apartment is priced at ₹85,00,000.
+
+Scene 3 (feature) - image #3 - 5.0s
+  Caption  : Key Features | 3 bedrooms | 2 bathrooms
+  Voice-over: Features include 3 bedrooms and 2 bathrooms.
+
+Scene 4 (feature) - image #4 - 5.0s
+  Caption  : Key Features | Modular kitchen | Covered parking
+  Voice-over: Features include Modular kitchen and Covered parking.
+
+Scene 5 (feature) - image #5 - 5.0s
+  Caption  : Key Features | Balcony
+  Voice-over: Features include Balcony.
+
+Scene 6 (closing) - image #6 - 5.0s
+  Caption  : Maple Grove Residency | Book a site visit today | +91 90000 00000 | sales@example.com
+  Voice-over: Book a site visit today. Contact +91 90000 00000 | sales@example.com.
+
+FULL VOICE-OVER SCRIPT
+------------------------------------------------------------
+Introducing Maple Grove Residency, in Sector 99, Demo City. This 3 BHK Apartment is priced at ₹85,00,000. Features include 3 bedrooms and 2 bathrooms. Features include Modular kitchen and Covered parking. Features include Balcony. Book a site visit today. Contact +91 90000 00000 | sales@example.com.

@@ -2,15 +2,15 @@
 
 ## AI models and external APIs used by the application at run time
 
-**None.** The application does not call any AI model, LLM, text-to-speech service, or web API while it runs.
+**By default none.** The default script is rule-based and works offline. One optional feature, "AI voice-over polish" (off by default, `src/llm_rewriter.py`), calls an LLM API (Google Gemini or Anthropic Claude) **only if the user switches it on and types their own API key**. The key is not saved. Only the property facts typed in the form are sent (never the photos). Each AI sentence is rejected if it adds a number, a word outside the user's facts, or drops a fact, and on-screen captions are never rewritten by the AI.
 
 | Question | Answer |
 |---|---|
-| Is a large language model used? | No |
-| Are any API keys needed? | No. There is no `.env` file and no secret in the source code |
-| Does the app send data to the internet? | No. Photos and property details stay on your computer. Streamlit's anonymous usage statistics are switched off in `.streamlit/config.toml` |
+| Is a large language model used? | Only in the optional AI polish, never by default |
+| Are any API keys needed? | No, except for the optional AI polish (user's own key, typed in the app or in the `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` environment variable). No key is in the source code |
+| Does the app send data to the internet? | Not by default. With AI polish on, the typed property facts and one sentence per scene are sent to the chosen provider. Photos and property details stay on your computer. Streamlit's anonymous usage statistics are switched off in `.streamlit/config.toml` |
 | Narration / text-to-speech? | Not implemented. The voice-over script is generated as text only |
-| Background music? | Not used, so there are no music licensing questions |
+| Background music? | Optional checkbox (off by default). The tune is synthesised from sine waves by `src/music.py`, so no third-party music or licence is involved |
 
 ### How the "AI" part works
 The script and captions are produced by **deterministic, template-based natural-language generation** with a

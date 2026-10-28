@@ -1,6 +1,6 @@
 # Test Results
 
-**Result: 94 passed, 0 failed** in 131 seconds. The full log is in `tests/last_test_run.txt`.
+**Result: 102 passed, 0 failed** in 161 seconds. The full log is in `tests/last_test_run.txt`.
 
 | | |
 |---|---|
@@ -15,6 +15,7 @@
 | `tests/test_validators.py` | 40 | Form fields and image files |
 | `tests/test_script_generator.py` | 39 | Scene structure, facts-only guarantee, video length, feature-to-photo matching with labels |
 | `tests/test_video_generator.py` | 11 | Text layout, export failures, two real MP4 renders |
+| `tests/test_llm_rewriter.py` | 6 | AI polish with fake LLM functions: safe sentences accepted, invented numbers/words/dropped facts rejected, API failure falls back, captions untouched |
 | `tests/test_app_ui.py` | 4 | The Streamlit app, run headless, including one full generate-and-download flow |
 
 ## Coverage of the cases listed in the assignment brief
@@ -38,7 +39,7 @@
 
 ## What each render test checks inside the MP4
 * Codec is H.264, pixel format is yuv420p, size is exactly 1280x720 (or 720x1280 for vertical)
-* No audio stream
+* No audio stream by default; with the music option: AAC audio, same length
 * Real duration is between 20 and 40 s and matches the planned duration within 1 s
 * Progress values go up to 1.0 and never go backwards
 * No `.part` temporary file is left behind

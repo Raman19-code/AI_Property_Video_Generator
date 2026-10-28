@@ -17,7 +17,7 @@ The app writes a script and captions using **template logic**, because an advert
 sentence is built only from the user's facts, and a **grounding check** verifies that no unknown number or word got in.
 Then it turns each photo into a scene with a text panel and a slow zoom, cross-fades the scenes, and exports an H.264
 MP4 that plays in any browser. The user can preview and download it. Bad input, such as a corrupted image or a missing
-price, gives a clear message instead of a crash. There are 94 automated tests, including real video renders."
+price, gives a clear message instead of a crash. There are 102 automated tests, including real video renders."
 
 ## 2. Architecture in one minute
 ```
@@ -103,7 +103,7 @@ Pehle extension, phir Pillow se asli format, `verify()`, phir poori image load k
 Video pehle `.part.mp4` mein banta hai, complete hone par hi rename hota hai. Fail par temp file delete hoti hai aur friendly message aata hai (disk full, file locked, memory). Test mein fail simulate karke verify kiya.
 
 **Q16. Kya test kiya, aur kya nahi?**
-94 tests: validation, script/facts-only, 2 real MP4 renders (codec, size, duration, last frame par CTA), UI flow. Nahi hua: Windows `run.bat` par test aur real Chrome/Edge playback (maine Linux par banaya, MP4 FFmpeg se decode hota hai).
+102 tests: validation, script/facts-only, 2 real MP4 renders (codec, size, duration, last frame par CTA), UI flow. Nahi hua: Windows `run.bat` par test aur real Chrome/Edge playback (maine Linux par banaya, MP4 FFmpeg se decode hota hai).
 
 **Q17. Memory aur speed?**
 8 GB par chalega: images pehle hi resize hoti hain, 1280x720, 24 fps. 30 second video ~45-60 second mein banti hai (CPU encode). Fast karne ke liye: fps kam, hardware encoder (NVENC), ya background job queue.
@@ -159,7 +159,7 @@ Video silent hai (narration nahi), aur photo-feature matching abhi manual labels
 | Length | 4-5 s per scene, about 21 s (4 photos) to 33 s (8 photos) |
 | Transition | 0.8 s cross-fade, 6% slow zoom |
 | Features per photo | max 3 |
-| Tests | 94, includes real renders |
+| Tests | 102, includes real renders |
 | Render time | about 45-60 s for 30 s video |
 | Sample | 7 synthetic illustrations, fictional property, example.com contact |
 

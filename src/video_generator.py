@@ -278,8 +278,9 @@ def generate_video(
     output_path: str | os.PathLike,
     aspect: tuple[int, int] = config.ASPECT_RATIOS[config.DEFAULT_ASPECT],
     progress: ProgressCallback | None = None,
+    music: bool = False,
 ) -> Path:
-    """Render the MP4. Raises VideoGenerationError (friendly message) on any failure."""
+    """Render the MP4 (optionally with a generated background-music track). Raises VideoGenerationError (friendly message) on any failure."""
     from moviepy import CompositeVideoClip, vfx
 
     report = progress or (lambda frac, msg: None)
@@ -297,7 +298,8 @@ def generate_video(
         raise VideoGenerationError(f"Cannot create the output folder '{out.parent}'. Check permissions.") from exc
     tmp = out.with_name(f"{out.stem}.part{out.suffix or '.mp4'}")
 
-    clips, final = [], None
+    clips, final, audio = [], None, None
+    wav = out.with_name(f"{out.stem}.part.wav")
     try:
         report(0.02, "Preparing scenes...")
         step = script.scene_seconds
@@ -310,12 +312,20 @@ def generate_video(
             report(0.02 + 0.08 * (i + 1) / n, f"Prepared scene {i + 1} of {n}")
 
         final = CompositeVideoClip(clips, size=(W, H))
+        if music:
+            from moviepy import AudioFileClip, afx
+            from .music import synthesize_music
+            synthesize_music(final.duration, wav)
+            audio = AudioFileClip(str(wav)).with_effects(
+                [afx.AudioFadeIn(1.0), afx.AudioFadeOut(2.0)])
+            final = final.with_audio(audio)
         report(0.10, "Encoding video (this takes a little while)...")
         final.write_videofile(
             str(tmp),
             fps=config.FPS,
             codec="libx264",
-            audio=False,
+            audio=bool(music),
+            audio_codec="aac",
             preset="veryfast",
             pixel_format="yuv420p",
             ffmpeg_params=["-crf", "22", "-movflags", "+faststart"],
@@ -342,6 +352,9 @@ def generate_video(
             hint = "Try fewer or smaller images. If it keeps failing, see the Troubleshooting section of the README."
         raise VideoGenerationError(f"Video export failed ({type(exc).__name__}). {hint}") from exc
     finally:
+        if audio is not None:
+            audio.close()
+        wav.unlink(missing_ok=True)
         for c in clips:
             c.close()
         if final is not None:

@@ -138,3 +138,26 @@ def test_vertical_format_with_mixed_aspect_ratios(tmp_path):
     assert "720x1280" in info and "h264" in info
     last = extract_frame(out, 19.5)
     assert last.size == (720, 1280)
+
+
+def test_music_synth_is_valid_wav(tmp_path):
+    import wave
+    from src.music import synthesize_music
+    p = synthesize_music(5.0, tmp_path / "m.wav")
+    with wave.open(str(p)) as w:
+        assert w.getnframes() == 5 * w.getframerate() and w.getnchannels() == 1
+    with pytest.raises(ValueError):
+        synthesize_music(0, tmp_path / "x.wav")
+
+
+@pytest.mark.slow
+def test_video_with_music_has_aac_audio_and_same_length(tmp_path):
+    d = _details()
+    script = generate_script(d, 4)
+    out = generate_video(_images(4), script, tmp_path / "m.mp4", music=True)
+    info = video_info(out)
+    assert "Audio: aac" in info and "Video: h264" in info and "yuv420p" in info
+    m = re.search(r"Duration: (\d+):(\d+):([\d.]+)", info)
+    seconds = int(m[1]) * 3600 + int(m[2]) * 60 + float(m[3])
+    assert abs(seconds - script.total_seconds) < 1.0
+    assert list(tmp_path.glob("*.part*")) == []                  # temp wav and mp4 cleaned up

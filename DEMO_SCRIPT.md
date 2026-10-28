@@ -25,7 +25,7 @@ the agent enters the property facts and uploads 4-8 photos, and gets a ready-to-
 * **Template-based script with a grounding check**: "A real-estate ad must never invent a pool or a distance. Templates make that impossible. `check_grounding()` re-reads the finished script and rejects any number or word that is not in the user's facts or the template vocabulary. Tests also confirm the templates contain no words like luxury or stunning."
 * **Validation first**: required fields, lengths, contact format, and for images the *real* file type, corruption, size and phone-photo rotation.
 * **Reliability**: the video is first written to a temporary file and renamed only when complete; every failure becomes a readable message.
-* **94 automated tests**, including real MP4 renders that check codec, size, duration and that the last frame shows the enquiry prompt.
+* **102 automated tests**, including real MP4 renders that check codec, size, duration and that the last frame shows the enquiry prompt.
 
 ## 4. Limitations and future work (30 seconds)
 * No narration audio or background music yet (optional in the assignment). The voice-over exists as text.

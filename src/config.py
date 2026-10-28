@@ -65,3 +65,7 @@ COLOR_GOLD = (232, 190, 90)
 COLOR_SOFT = (214, 220, 232)
 
 KEEP_LAST_OUTPUTS = 15        # old generated videos are cleaned up automatically
+
+# Optional user-supplied background audio
+AUDIO_EXTENSIONS = (".mp3", ".wav", ".m4a")
+MAX_AUDIO_BYTES = 15 * 1024 * 1024

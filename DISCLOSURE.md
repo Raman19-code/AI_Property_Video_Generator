@@ -10,7 +10,7 @@
 | Are any API keys needed? | No, except for the optional AI polish (user's own key, typed in the app or in the `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` environment variable). No key is in the source code |
 | Does the app send data to the internet? | Not by default. With AI polish on, the typed property facts and one sentence per scene are sent to the chosen provider. Photos and property details stay on your computer. Streamlit's anonymous usage statistics are switched off in `.streamlit/config.toml` |
 | Narration / text-to-speech? | Not implemented. The voice-over script is generated as text only |
-| Background music? | Optional checkbox (off by default). The tune is synthesised from sine waves by `src/music.py`, so no third-party music or licence is involved |
+| Background music? | Optional (off by default); users can also upload their own audio, which stays on their computer and is deleted after rendering. The tune is synthesised from sine waves by `src/music.py`, so no third-party music or licence is involved |
 
 ### How the "AI" part works
 The script and captions are produced by **deterministic, template-based natural-language generation** with a

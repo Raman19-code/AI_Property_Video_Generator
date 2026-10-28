@@ -161,3 +161,22 @@ def test_video_with_music_has_aac_audio_and_same_length(tmp_path):
     seconds = int(m[1]) * 3600 + int(m[2]) * 60 + float(m[3])
     assert abs(seconds - script.total_seconds) < 1.0
     assert list(tmp_path.glob("*.part*")) == []                  # temp wav and mp4 cleaned up
+
+
+@pytest.mark.slow
+def test_users_own_short_audio_is_looped_and_bad_audio_is_friendly(tmp_path):
+    from src.music import synthesize_music
+    short = synthesize_music(3.0, tmp_path / "short.wav")           # shorter than the video -> must loop
+    d = _details()
+    script = generate_script(d, 4)
+    out = generate_video(_images(4), script, tmp_path / "own.mp4", audio_file=short)
+    info = video_info(out)
+    assert "Audio: aac" in info
+    m = re.search(r"Duration: (\d+):(\d+):([\d.]+)", info)
+    assert abs(int(m[1]) * 3600 + int(m[2]) * 60 + float(m[3]) - script.total_seconds) < 1.0
+
+    bad = tmp_path / "bad.mp3"
+    bad.write_bytes(b"this is not audio")
+    with pytest.raises(VideoGenerationError, match="audio file"):
+        generate_video(_images(4), script, tmp_path / "bad.mp4", audio_file=bad)
+    assert list(tmp_path.glob("*.part*")) == [] and not (tmp_path / "bad.mp4").exists()

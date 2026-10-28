@@ -279,6 +279,7 @@ def generate_video(
     aspect: tuple[int, int] = config.ASPECT_RATIOS[config.DEFAULT_ASPECT],
     progress: ProgressCallback | None = None,
     music: bool = False,
+    audio_file: str | os.PathLike | None = None,
 ) -> Path:
     """Render the MP4 (optionally with a generated background-music track). Raises VideoGenerationError (friendly message) on any failure."""
     from moviepy import CompositeVideoClip, vfx
@@ -312,19 +313,30 @@ def generate_video(
             report(0.02 + 0.08 * (i + 1) / n, f"Prepared scene {i + 1} of {n}")
 
         final = CompositeVideoClip(clips, size=(W, H))
-        if music:
+        if music or audio_file:
             from moviepy import AudioFileClip, afx
-            from .music import synthesize_music
-            synthesize_music(final.duration, wav)
-            audio = AudioFileClip(str(wav)).with_effects(
-                [afx.AudioFadeIn(1.0), afx.AudioFadeOut(2.0)])
+            if audio_file:                      # the user's own track: loop if short, cut if long
+                try:
+                    audio = AudioFileClip(str(audio_file))
+                    if audio.duration < final.duration:
+                        audio = audio.with_effects([afx.AudioLoop(duration=final.duration)])
+                    else:
+                        audio = audio.subclipped(0, final.duration)
+                except Exception as exc:  # noqa: BLE001
+                    raise VideoGenerationError(
+                        "Could not read your audio file. Use a normal MP3, WAV or M4A file.") from exc
+            else:
+                from .music import synthesize_music
+                synthesize_music(final.duration, wav)
+                audio = AudioFileClip(str(wav))
+            audio = audio.with_effects([afx.AudioFadeIn(1.0), afx.AudioFadeOut(2.0)])
             final = final.with_audio(audio)
         report(0.10, "Encoding video (this takes a little while)...")
         final.write_videofile(
             str(tmp),
             fps=config.FPS,
             codec="libx264",
-            audio=bool(music),
+            audio=bool(music or audio_file),
             audio_codec="aac",
             preset="veryfast",
             pixel_format="yuv420p",

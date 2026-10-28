@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from typing import Sequence
 
 from src import config
 from src.validators import PropertyDetails
@@ -29,6 +30,7 @@ TEMPLATES = {
     "feature_label": "Key Features",
     "feature_voice": "Features include {features}.",
     "card_voice": "{label}: {value}.",
+    "label_voice": "{label}.",
     "closing_voice": "{cta}. Contact {contact}.",
     "closing_voice_no_contact": "{cta}.",
     "joiner": "{a} and {b}",
@@ -65,6 +67,7 @@ class VideoScript:
     scene_seconds: float
     omitted_features: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    image_labels: list[str] = field(default_factory=list)   # user's photo labels (also "supplied facts")
 
     @property
     def voiceover(self) -> str:
@@ -111,6 +114,32 @@ def _split_evenly(items: list[str], groups: int) -> list[list[str]]:
     return result
 
 
+_STOP_WORDS = {"a", "an", "the", "of", "with", "and", "in", "for", "to", "at", "on", "from"}
+
+
+def _stem(word: str) -> str:
+    """Tiny stemmer: 'Bedrooms' and 'bedroom' become the same token."""
+    word = word.lower()
+    if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        word = word[:-1]
+    return word
+
+
+def _stems(text: str) -> set[str]:
+    return {_stem(w) for w in _WORD.findall(text) if len(w) > 2 and w.lower() not in _STOP_WORDS}
+
+
+def match_score(feature: str, label: str) -> int:
+    """How many (stemmed) words a feature and a photo label share. 0 = no match."""
+    return len(_stems(feature) & _stems(label))
+
+
+def _normalise_labels(labels: Sequence[str] | None, n_images: int) -> list[str]:
+    cleaned = [re.sub(r"\s+", " ", str(x or "")).strip() for x in (labels or [])]
+    cleaned = cleaned[:n_images]
+    return cleaned + [""] * (n_images - len(cleaned))
+
+
 def scene_seconds_for(n_images: int) -> float:
     """Pick a scene length so that the whole video lands between ~20 and ~33 seconds."""
     return min(config.MAX_SCENE_SECONDS, max(config.MIN_SCENE_SECONDS, config.TARGET_TOTAL_SECONDS / n_images))
@@ -121,11 +150,17 @@ def scene_seconds_for(n_images: int) -> float:
 # --------------------------------------------------------------------------- #
 
 
-def generate_script(details: PropertyDetails, n_images: int) -> VideoScript:
-    """Create one scene per image: hook, intro, feature/fact scenes, closing enquiry."""
+def generate_script(details: PropertyDetails, n_images: int,
+                    image_labels: Sequence[str] | None = None) -> VideoScript:
+    """Create one scene per image: hook, intro, feature/fact scenes, closing enquiry.
+
+    `image_labels` is optional: one short text per image (e.g. "Kitchen") that the user typed.
+    It lets the generator put each feature next to the photo that shows it.
+    """
     if not config.MIN_IMAGES <= n_images <= config.MAX_IMAGES:
         raise ValueError(f"Need {config.MIN_IMAGES}-{config.MAX_IMAGES} images, got {n_images}.")
 
+    labels = _normalise_labels(image_labels, n_images)
     t = TEMPLATES
     d = details
     price = d.price_display
@@ -144,26 +179,52 @@ def generate_script(details: PropertyDetails, n_images: int) -> VideoScript:
         voiceover=t["intro_voice"].format(property_type=d.property_type, price=price))
 
     # 3. Middle scenes: features first, then plain fact cards if images are left over
-    middle_slots = n_images - 3
-    capacity = middle_slots * config.MAX_FEATURES_PER_SCENE
-    shown, omitted = d.features[:capacity], d.features[capacity:]
-    feature_scenes = min(middle_slots, len(shown))
-    if feature_scenes:
-        for group in _split_evenly(shown, feature_scenes):
-            add("feature", label=t["feature_label"], lines=group,
-                voiceover=t["feature_voice"].format(features=_join_natural(group)))
+    #    Step A: a feature goes next to the photo whose label matches it ("Kitchen" <-> "Modular kitchen").
+    #    Step B: features that matched no photo fill the photos WITHOUT a label (so we never show
+    #            "bedroom" text over a kitchen photo). Whatever is left over is reported, not hidden.
+    middle = list(range(2, n_images - 1))          # image numbers used by the middle scenes
+    slots: dict[int, list[str]] = {i: [] for i in middle}
+    unmatched: list[str] = []
+    for feat in d.features:
+        best, best_score = None, 0
+        for i in middle:
+            if labels[i] and len(slots[i]) < config.MAX_FEATURES_PER_SCENE:
+                score = match_score(feat, labels[i])
+                if score > best_score:
+                    best, best_score = i, score
+        if best is None:
+            unmatched.append(feat)
+        else:
+            slots[best].append(feat)
+
+    free = [i for i in middle if not labels[i]]
+    capacity = len(free) * config.MAX_FEATURES_PER_SCENE
+    shown, omitted = unmatched[:capacity], unmatched[capacity:]
+    if shown:
+        for i, group in zip(free, _split_evenly(shown, min(len(free), len(shown)))):
+            slots[i] = group
     if omitted:
+        hint = ("A feature is shown with the photo whose label matches it (for example the label 'Kitchen' "
+                "for 'Modular kitchen'); other features only go on photos that have no label. "
+                if any(labels) else "")
         warnings.append(
             f"{len(omitted)} feature(s) did not fit in the video: {', '.join(omitted)}. "
-            "Upload more images (up to 8) to show more features."
+            f"{hint}Upload more images (up to 8) or label fewer photos to show more features."
         )
 
     card_values = {"Location": d.location, "Property Type": d.property_type, "Price": price}
-    for i in range(middle_slots - feature_scenes):
-        label = t["card_labels"][i % len(t["card_labels"])]
-        value = card_values[label]
-        add("card", label=label, title=value,
-            voiceover=t["card_voice"].format(label=label, value=value))
+    cards_made = 0
+    for i in middle:
+        if slots[i]:
+            add("feature", label=labels[i] or t["feature_label"], lines=slots[i],
+                voiceover=t["feature_voice"].format(features=_join_natural(slots[i])))
+        elif labels[i]:                                   # labelled photo with no feature: just name it
+            add("card", label=d.name, title=labels[i], voiceover=t["label_voice"].format(label=labels[i]))
+        else:                                             # unlabelled spare photo: show one plain fact
+            label = t["card_labels"][cards_made % len(t["card_labels"])]
+            cards_made += 1
+            add("card", label=label, title=card_values[label],
+                voiceover=t["card_voice"].format(label=label, value=card_values[label]))
 
     # 4. Closing enquiry prompt
     cta = d.cta or config.DEFAULT_CTA
@@ -177,8 +238,8 @@ def generate_script(details: PropertyDetails, n_images: int) -> VideoScript:
     for s in scenes:
         s.duration = seconds
 
-    script = VideoScript(scenes=scenes, scene_seconds=seconds, omitted_features=omitted, warnings=warnings)
-    return script
+    return VideoScript(scenes=scenes, scene_seconds=seconds, omitted_features=omitted,
+                       warnings=warnings, image_labels=labels)
 
 
 # --------------------------------------------------------------------------- #
@@ -198,7 +259,7 @@ def _template_vocabulary() -> set[str]:
 def check_grounding(script: VideoScript, details: PropertyDetails) -> list[str]:
     """Return a list of problems. Empty list = every number and word is grounded."""
     facts = [details.name, details.location, details.price, details.currency,
-             details.property_type, details.contact, details.cta, *details.features]
+             details.property_type, details.contact, details.cta, *details.features, *script.image_labels]
     fact_text = " ".join(facts)
     allowed_words = {w.lower() for w in _WORD.findall(fact_text)} | _template_vocabulary()
     allowed_numbers = set(_NUMBER.findall(fact_text))

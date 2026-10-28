@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src import config  # noqa: E402
 from src.script_generator import check_grounding, generate_script  # noqa: E402
-from src.validators import load_and_validate_images, validate_details  # noqa: E402
+from src.validators import load_and_validate_images, validate_details, validate_image_labels  # noqa: E402
 from src.video_generator import generate_video  # noqa: E402
 
 
@@ -28,7 +28,9 @@ def main() -> None:
     images, img_result = load_and_validate_images(files)
     assert images, img_result.errors
 
-    script = generate_script(details, len(images))
+    labels, label_result = validate_image_labels(data.get("image_labels", []))
+    assert label_result.ok, label_result.errors
+    script = generate_script(details, len(images), labels)
     problems = check_grounding(script, details)
     assert not problems, problems
 

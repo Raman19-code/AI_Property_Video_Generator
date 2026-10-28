@@ -13,9 +13,9 @@ the agent enters the property facts and uploads 4-8 photos, and gets a ready-to-
 
 ## 2. Live demo (90 seconds)
 1. **Show the empty form** and press **Generate video**. Point at the friendly error list. "Missing details and image-count problems never crash the app."
-2. Click **Load sample property** (fictional data and synthetic illustrations).
+2. Click **Load sample property** (fictional data, 7 synthetic illustrations and a label under each photo, such as Kitchen).
 3. Press **Generate video**. While the progress bar runs say: "The script is created first, then each image becomes a scene with a caption, and FFmpeg encodes the MP4."
-4. **Play the video.** Point out: opening hook, price scene, feature scenes, final enquiry prompt with contact details, smooth cross-fades, slow zoom.
+4. **Play the video.** Point out: opening hook, price scene, feature scenes (each feature is shown with its matching photo), final enquiry prompt with contact details, smooth cross-fades, slow zoom.
 5. Open the **Scene captions** table and the **Voice-over script** tab. "Every word is either the user's fact or a fixed template sentence."
 6. Click **Download MP4**.
 7. (Optional, 20 s) Switch the aspect ratio to vertical 9:16 for social media and show it renders.
@@ -25,11 +25,11 @@ the agent enters the property facts and uploads 4-8 photos, and gets a ready-to-
 * **Template-based script with a grounding check**: "A real-estate ad must never invent a pool or a distance. Templates make that impossible. `check_grounding()` re-reads the finished script and rejects any number or word that is not in the user's facts or the template vocabulary. Tests also confirm the templates contain no words like luxury or stunning."
 * **Validation first**: required fields, lengths, contact format, and for images the *real* file type, corruption, size and phone-photo rotation.
 * **Reliability**: the video is first written to a temporary file and renamed only when complete; every failure becomes a readable message.
-* **84 automated tests**, including real MP4 renders that check codec, size, duration and that the last frame shows the enquiry prompt.
+* **94 automated tests**, including real MP4 renders that check codec, size, duration and that the last frame shows the enquiry prompt.
 
 ## 4. Limitations and future work (30 seconds)
 * No narration audio or background music yet (optional in the assignment). The voice-over exists as text.
-* Photos are used in upload order; the app does not understand what a photo shows.
+* Photos are used in upload order and the app does not understand what a photo shows; it relies on the optional labels you type (future: automatic labelling with an image classifier).
 * Future: text-to-speech, licensed music, an LLM that rewrites captions but is checked by the same grounding guard, auto-ordering photos with an image classifier, batch mode.
 
 ---
@@ -43,7 +43,7 @@ A: Script generation rule-based NLG hai: fixed templates mein user ke facts bhar
 A: Teen layers: (1) templates mein sirf neutral words hain, (2) `check_grounding()` har scene ke numbers aur words verify karta hai, (3) tests mein ek invented "Swimming pool" aur "5 km from airport" daal ke dikhaya hai ki checker usse pakad leta hai.
 
 **Q: Images scenes mein kaise arrange hoti hain?**
-A: Har image ek scene banti hai. Pehli image opening hook, doosri intro, beech ki feature scenes, aur aakhri image closing enquiry. Order upload ka rehta hai kyunki user ko apni photos ka pata hai.
+A: Har image ek scene banti hai. Pehli image opening hook, doosri intro, beech ki feature scenes, aur aakhri image closing enquiry. Order upload ka rehta hai. User photo ke neeche label likh sakta hai (jaise Kitchen), aur matcher "Modular kitchen" feature ko usi photo par laga deta hai.
 
 **Q: Video browser mein chale, iske liye kya kiya?**
 A: H.264 codec (libx264) aur `yuv420p` pixel format. Ye dono har browser aur phone mein chalte hain. Test mein ffmpeg se codec aur pixel format check hota hai.

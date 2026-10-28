@@ -7,11 +7,20 @@
   "property_type": "3 BHK Apartment",
   "features": [
     "3 bedrooms",
-    "2 bathrooms",
+    "Wardrobes in every bedroom",
     "Modular kitchen",
-    "Covered parking",
-    "Balcony"
+    "2 bathrooms",
+    "Covered parking"
   ],
   "contact": "+91 90000 00000 | sales@example.com",
-  "cta": "Book a site visit today"
+  "cta": "Book a site visit today",
+  "image_labels": [
+    "Exterior",
+    "Living room",
+    "Bedroom",
+    "Kitchen",
+    "Bathroom",
+    "Parking",
+    "Balcony"
+  ]
 }

@@ -242,3 +242,14 @@ def load_and_validate_images(
     if result.errors:
         return [], result
     return images, result
+
+
+def validate_image_labels(labels: Sequence[str] | None) -> tuple[list[str], ValidationResult]:
+    """Optional short label per photo (for example "Kitchen"). Empty labels are fine."""
+    result = ValidationResult()
+    cleaned = [clean_text(x) for x in (labels or [])]
+    for i, label in enumerate(cleaned, start=1):
+        if len(label) > config.MAX_IMAGE_LABEL:
+            result.errors.append(
+                f"Label of image {i} is too long ({len(label)} characters). Keep it under {config.MAX_IMAGE_LABEL}.")
+    return cleaned, result

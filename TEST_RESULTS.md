@@ -1,6 +1,6 @@
 # Test Results
 
-**Result: 84 passed, 0 failed** in 138 seconds. The full log is in `tests/last_test_run.txt`.
+**Result: 94 passed, 0 failed** in 131 seconds. The full log is in `tests/last_test_run.txt`.
 
 | | |
 |---|---|
@@ -13,7 +13,7 @@
 | Test file | Tests | What it covers |
 |---|---|---|
 | `tests/test_validators.py` | 40 | Form fields and image files |
-| `tests/test_script_generator.py` | 29 | Scene structure, facts-only guarantee, video length |
+| `tests/test_script_generator.py` | 39 | Scene structure, facts-only guarantee, video length, feature-to-photo matching with labels |
 | `tests/test_video_generator.py` | 11 | Text layout, export failures, two real MP4 renders |
 | `tests/test_app_ui.py` | 4 | The Streamlit app, run headless, including one full generate-and-download flow |
 
@@ -33,6 +33,7 @@
 | Successful MP4 generation | `test_landscape_8_images_end_to_end`, `test_vertical_format_with_mixed_aspect_ratios`, `test_sample_property_end_to_end_in_the_ui` | Pass |
 | Video has the required scenes, captions and final enquiry prompt | `test_one_scene_per_image_with_required_structure[4..8]` (hook, intro, closing with call-to-action and contact), and the 8-image render test, which reads the last frame of the MP4 and checks for large white call-to-action text and the gold contact line | Pass |
 | Facts only, nothing invented | `test_grounding_check_catches_invented_claims`, `test_templates_contain_no_marketing_superlatives`, `test_features_are_used_verbatim_and_only_from_user`, `test_too_many_features_are_reported_not_invented`, `test_price_in_script_matches_input_exactly` | Pass |
+| Features shown with the matching photo | `test_each_feature_is_shown_with_its_matching_photo`, `test_match_score_handles_plurals_case_and_unrelated_words`, `test_unmatched_feature_is_never_placed_on_a_wrongly_labelled_photo`, `test_unmatched_features_use_photos_without_a_label`, `test_labelled_photo_without_matching_feature_becomes_a_label_card`, `test_at_most_three_features_per_photo`, `test_without_labels_behaviour_is_unchanged`, `test_label_validation`, and the UI test (scene 3 caption is `Bedroom | 3 bedrooms | Wardrobes in every bedroom`) | Pass |
 | Length 20-40 seconds | `test_video_length_is_between_20_and_40_seconds[4..8]`, and the render test compares the real MP4 duration with the plan | Pass |
 
 ## What each render test checks inside the MP4

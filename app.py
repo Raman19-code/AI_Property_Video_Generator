@@ -11,7 +11,7 @@ import streamlit as st
 
 from src import config
 from src.script_generator import check_grounding, generate_script
-from src.validators import load_and_validate_images, validate_details
+from src.validators import load_and_validate_images, validate_details, validate_image_labels
 from src.video_generator import (VideoGenerationError, generate_video, prune_old_outputs,
                                  slugify)
 
@@ -54,10 +54,15 @@ def load_sample() -> None:
         f_features="\n".join(data["features"]), f_contact=data.get("contact", ""),
         f_cta=data.get("cta", ""), image_source="Use the bundled sample images",
     )
+    sample_labels = data.get("image_labels", [])
+    for i in range(config.MAX_IMAGES + 4):
+        st.session_state[f"label_{i}"] = sample_labels[i] if i < len(sample_labels) else ""
 
 
 def clear_form() -> None:
     st.session_state.update(FIELDS)
+    for i in range(config.MAX_IMAGES + 4):
+        st.session_state[f"label_{i}"] = ""
     st.session_state.pop("result", None)
     st.session_state["image_source"] = "Upload my own photos"
 
@@ -107,12 +112,17 @@ with media_col:
     else:
         st.warning(f"{n} images selected. You need between {config.MIN_IMAGES} and {config.MAX_IMAGES}.")
     if files:
+        st.caption("Optional: write what each photo shows (for example Kitchen). The video then shows each "
+                   "feature with the matching photo. Photos are used in this order: the first is the opening "
+                   "shot and the last one carries the enquiry message.")
         cols = st.columns(4)
         for i, (name, data) in enumerate(files[:config.MAX_IMAGES + 4]):
             try:
                 cols[i % 4].image(data, caption=f"{i + 1}. {name}", use_container_width=True)
             except Exception:  # a broken file is reported properly when you press Generate
                 cols[i % 4].caption(f"{i + 1}. {name} (cannot preview)")
+            cols[i % 4].text_input(f"Label for photo {i + 1}", key=f"label_{i}", placeholder="e.g. Kitchen",
+                                   label_visibility="collapsed", max_chars=60)
 
     st.subheader("3. Video format")
     aspect_name = st.selectbox("Aspect ratio", list(config.ASPECT_RATIOS),
@@ -131,7 +141,9 @@ if generate:
             st.session_state.f_contact, st.session_state.f_cta,
         )
         images, i_res = load_and_validate_images(files)
-        errors = d_res.errors + i_res.errors
+        labels, l_res = validate_image_labels(
+            [st.session_state.get(f"label_{i}", "") for i in range(len(files))])
+        errors = d_res.errors + i_res.errors + l_res.errors
         warnings = d_res.warnings + i_res.warnings
 
         if errors:
@@ -139,7 +151,7 @@ if generate:
             for w in warnings:
                 st.warning(w)
         else:
-            script = generate_script(details, len(images))
+            script = generate_script(details, len(images), labels)
             problems = check_grounding(script, details)
             if problems:   # should never happen with the built-in templates; guard anyway
                 st.error("Safety check failed: the script contained unsupported text.\n\n"

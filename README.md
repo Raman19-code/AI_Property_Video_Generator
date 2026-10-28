@@ -39,7 +39,7 @@ python scripts\generate_sample_video.py
 | Step | What to do |
 |---|---|
 | 1 | Fill in name, location, currency + price, property type, key features (one per line or comma separated). Contact details and a call-to-action are optional |
-| 2 | Upload **4-8 JPG/PNG images** (or choose the bundled sample images). A live counter tells you if the count is wrong |
+| 2 | Upload **4-8 JPG/PNG images** (or choose the bundled sample images). A live counter tells you if the count is wrong. Under each photo you can type an **optional label** such as *Kitchen*; features are then shown with the matching photo |
 | 3 | Pick the format: landscape 16:9 (1280x720) or vertical 9:16 (720x1280) |
 | 4 | Click **Generate video**. A progress bar is shown while it renders (about 30-60 seconds for a 30 s video) |
 | 5 | Watch the preview, then **Download MP4** (or download the script as text). The scene table and voice-over script are shown next to the video |
@@ -54,7 +54,7 @@ Generated files are also saved in `outputs/` (the newest 15 are kept automatical
 | 2 | Accept 4-8 images | `load_and_validate_images()` |
 | 3 | Short promotional script + scene captions (AI or clearly explained template logic) | `src/script_generator.py` (template logic, explained below) |
 | 4 | Use only supplied facts | Templates + `check_grounding()` guard + tests |
-| 5 | Arrange images into scenes automatically | `generate_script()`: one scene per image: hook, intro, feature scenes, closing |
+| 5 | Arrange images into scenes automatically | `generate_script()`: one scene per image: hook, intro, feature scenes, closing. Optional photo labels pull each feature onto the matching photo |
 | 6 | Readable text overlays, transitions, optional narration / music | `src/video_generator.py`: Pillow text panels, cross-fade, slow zoom. Narration and music are optional and **not included** |
 | 7 | Export MP4 | H.264 + yuv420p (plays in all browsers) |
 | 8 | Preview and download | `st.video`, `st.download_button` |
@@ -79,13 +79,20 @@ Generated files are also saved in `outputs/` (the newest 15 are kept automatical
  app.py -- progress bar, preview, download, scene table
 ```
 
-**Scene plan** (one scene per image, uploaded order is kept, the first image is the opening shot):
+**Scene plan** (one scene per image, uploaded order is kept, the first image is the opening shot and the last one carries the enquiry message):
 
-1. **Hook** - property name + location
-2. **Intro** - property type + price
-3. **Feature scenes** - up to 3 of your features per scene, text copied exactly as typed
-4. **Fact cards** - only if there are more images than features: location / type / price (still your facts)
-5. **Closing** - your call-to-action + contact details (the enquiry prompt)
+1. **Hook** - property name + location (photo 1)
+2. **Intro** - property type + price (photo 2)
+3. **Feature scenes** - up to 3 of your features per photo, text copied exactly as typed
+4. **Fact cards** - for spare photos: location / type / price, or just the photo's label (still your facts)
+5. **Closing** - your call-to-action + contact details (the enquiry prompt) (last photo)
+
+**Matching features to photos (rule-based).** The app cannot see what a photo shows, so you can type a short label
+under each photo. A small matcher (lower-casing + plural stemming + word overlap, `match_score()` in
+`src/script_generator.py`) puts each feature next to the photo whose label shares a word with it
+(*Kitchen* <-> *Modular kitchen*, *Bedroom* <-> *3 bedrooms*). Features that match no photo are only placed on photos
+that have **no** label, so you never see "bedroom" text on a kitchen photo. Anything that cannot be placed is listed in a
+warning instead of being hidden. Without labels the app falls back to simple in-order placement.
 
 **Video length:** 4-5 seconds per scene, so 4 images give about 21 s and 8 images about 33 s (target 20-40 s).
 
@@ -106,12 +113,12 @@ src/config.py               All settings (limits, video size, timings, colours)
 src/validators.py           Form and image validation
 src/script_generator.py     Templates, scene plan, grounding check
 src/video_generator.py      Overlay drawing, zoom, cross-fade, MP4 export, progress
-data/sample_property.json   Fictional demo property
-assets/sample_images/       6 synthetic illustrations for the demo
+data/sample_property.json   Fictional demo property (with photo labels)
+assets/sample_images/       7 synthetic illustrations for the demo (exterior, living room, bedroom, kitchen, bathroom, parking, balcony)
 assets/fonts/               DejaVu Sans (bundled font) + licence
 outputs/                    Generated videos (sample_property_video.mp4 is included)
 scripts/                    make_sample_images.py, generate_sample_video.py
-tests/                      84 automated tests
+tests/                      94 automated tests
 DISCLOSURE.md               Models, APIs, libraries and assets used
 DEMO_SCRIPT.md              Demo walkthrough and likely questions
 TEST_RESULTS.md             Actual test results
@@ -135,7 +142,7 @@ See `TEST_RESULTS.md` for the actual results and what each test covers.
 
 * **No narration audio and no background music.** The voice-over script is shown as text only (both are optional in the assignment).
 * Captions are English template sentences. Names you type in other scripts (e.g. Hindi) work only if the bundled font has those glyphs; DejaVu Sans covers Latin, Cyrillic and Greek but not Devanagari.
-* Photos are used in upload order. The app cannot recognise what a photo shows, so feature captions are not matched to the picture behind them. Upload photos in the order you want them shown.
+* The app cannot recognise what a photo shows. Photos are used in upload order and feature-to-photo matching relies on the optional labels you type. Without labels, feature captions are placed in order and may not match the picture behind them.
 * With only 4 images the video has one feature scene, which fits up to 3 features; the rest are listed as "did not fit" with a warning. Upload more images to show more.
 * Very long locations (close to the 100 character limit) are shortened with "..." in the vertical format.
 * Rendering uses the CPU only: expect about 30-60 s for a 30 s video on a normal laptop.

@@ -47,11 +47,13 @@ def test_sample_property_end_to_end_in_the_ui(tmp_path, monkeypatch):
     at = _app()
     at = _button(at, "Load sample property").click().run()
     assert at.session_state["f_name"] == "Maple Grove Residency"
-    assert any("6 images selected" in s.value for s in at.success)
+    assert any("7 images selected" in s.value for s in at.success)
+    assert at.session_state["label_2"] == "Bedroom"          # photo labels are pre-filled by the sample
     at = _button(at, "Generate video").click().run()
     assert not at.exception and not at.error
     res = at.session_state["result"]
     assert res["video"][4:8] == b"ftyp"                     # real MP4 container
     assert len(res["video"]) > 100_000
-    assert len(res["scenes"]) == 6
+    assert len(res["scenes"]) == 7
+    assert res["scenes"][2]["On-screen caption"] == "Bedroom | 3 bedrooms | Wardrobes in every bedroom"
     assert res["scenes"][-1]["On-screen caption"].startswith("Maple Grove Residency | Book a site visit today")

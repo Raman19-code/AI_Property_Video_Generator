@@ -33,6 +33,7 @@ MAX_FEATURE = 50
 MAX_FEATURES = 12
 MAX_CONTACT = 100
 MAX_CTA = 80
+MAX_IMAGE_LABEL = 30       # optional text per photo, e.g. "Kitchen"
 MAX_FEATURES_PER_SCENE = 3
 
 CURRENCIES = {            # code -> symbol shown in the video

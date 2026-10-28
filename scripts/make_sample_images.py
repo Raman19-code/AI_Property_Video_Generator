@@ -1,4 +1,4 @@
-"""Creates 6 synthetic, copyright-free illustration images for the demo.
+"""Creates 7 synthetic, copyright-free illustration images for the demo.
 
 Run:  python scripts/make_sample_images.py
 They are drawn with Pillow (flat-style illustrations), contain no text, and are NOT
@@ -134,10 +134,28 @@ def parking():
     return im
 
 
+def bathroom():
+    im = Image.new("RGB", (W, H)); d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, W, H], fill=(226, 238, 240))
+    for x in range(0, W, 100):
+        d.line([(x, 0), (x, 640)], fill=(200, 216, 220), width=2)
+    for y in range(0, 640, 100):
+        d.line([(0, y), (W, y)], fill=(200, 216, 220), width=2)
+    d.rectangle([0, 640, W, H], fill=(150, 164, 170))
+    d.rounded_rectangle([760, 150, 1100, 460], 20, fill=(246, 248, 250), outline=(140, 150, 156), width=8)
+    d.ellipse([870, 250, 990, 370], fill=(200, 222, 238))
+    d.rectangle([180, 430, 560, 470], fill=(250, 250, 252), outline=(150, 160, 166), width=4)
+    d.rounded_rectangle([200, 470, 540, 680], 20, fill=(210, 218, 224))
+    d.rectangle([340, 380, 400, 430], fill=(150, 160, 170))
+    d.rounded_rectangle([140, 700, 1300, 840], 70, fill=(250, 250, 252), outline=(150, 160, 166), width=6)
+    d.rectangle([1200, 560, 1230, 700], fill=(170, 176, 184)); d.rectangle([1200, 540, 1300, 566], fill=(170, 176, 184))
+    return im
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    makers = [exterior, living_room, kitchen, bedroom, balcony, parking]
-    names = ["01_exterior", "02_living_room", "03_kitchen", "04_bedroom", "05_balcony", "06_parking"]
+    makers = [exterior, living_room, bedroom, kitchen, bathroom, parking, balcony]
+    names = ["01_exterior", "02_living_room", "03_bedroom", "04_kitchen", "05_bathroom", "06_parking", "07_balcony"]
     for fn, name in zip(makers, names):
         fn().save(OUT / f"{name}.jpg", quality=92)
         print("saved", name)

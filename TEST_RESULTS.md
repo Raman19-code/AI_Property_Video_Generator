@@ -1,6 +1,6 @@
 # Test Results
 
-**Result: 103 passed, 0 failed** in 208 seconds. The full log is in `tests/last_test_run.txt`.
+**Result: 109 passed, 0 failed** in 281 seconds. The full log is in `tests/last_test_run.txt`.
 
 | | |
 |---|---|
@@ -14,7 +14,7 @@
 |---|---|---|
 | `tests/test_validators.py` | 40 | Form fields and image files |
 | `tests/test_script_generator.py` | 39 | Scene structure, facts-only guarantee, video length, feature-to-photo matching with labels |
-| `tests/test_video_generator.py` | 11 | Text layout, export failures, two real MP4 renders |
+| `tests/test_video_generator.py` | 17 | Text layout, QR code generation, narration language, export failures, real MP4 renders |
 | `tests/test_llm_rewriter.py` | 6 | AI polish with fake LLM functions: safe sentences accepted, invented numbers/words/dropped facts rejected, API failure falls back, captions untouched |
 | `tests/test_app_ui.py` | 4 | The Streamlit app, run headless, including one full generate-and-download flow |
 

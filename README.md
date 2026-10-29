@@ -11,11 +11,12 @@
 ## Highlights
 
 - **Zero hallucination guarantee** — Script uses only the facts you type. A grounding validator rejects any AI-generated sentence that adds new information.
-- **Spoken narration** — Optional text-to-speech converts the voice-over script to audio using Google TTS (free, no API key).
+- **Multi-language narration** — Optional text-to-speech in 10 languages (English, Hindi, Spanish, French, Arabic, Portuguese, German, Japanese, Chinese, Korean) using Google TTS.
+- **QR code in closing scene** — Auto-generates a scannable QR code from contact details, embedded in the final scene for instant enquiry.
 - **Background music** — Optional original synthesised music, or upload your own MP3/WAV/M4A track.
 - **AI voice-over polish** — Optional LLM integration (Gemini / Claude) rephrases the voice-over to sound natural, with strict fact-checking on every sentence.
 - **Smart photo-feature matching** — Label your photos (e.g. "Kitchen") and features auto-match to the right image.
-- **103 automated tests** — Validators, script generation, grounding checks, video rendering, and edge cases.
+- **109 automated tests** — Validators, script generation, grounding checks, video rendering, QR code, and edge cases.
 - **Works offline by default** — No API key or internet required for the core workflow.
 
 ---
@@ -70,10 +71,11 @@
 | **MoviePy 2.x** | Video editing — scene assembly, crossfades, audio mixing |
 | **Pillow (PIL)** | Image processing, text overlay rendering |
 | **NumPy** | Pixel-level operations for Ken Burns zoom effect |
-| **gTTS** | Google Text-to-Speech for spoken narration (free) |
+| **gTTS** | Google Text-to-Speech for multi-language narration (free) |
+| **qrcode** | QR code generation for closing scene contact card |
 | **FFmpeg** | H.264 video encoding (via imageio-ffmpeg) |
 | **Google Gemini / Claude API** | Optional AI voice-over polish |
-| **pytest** | 103 automated tests |
+| **pytest** | 109 automated tests |
 
 ---
 
@@ -89,10 +91,14 @@
 - In-app preview + download (MP4 and script)
 
 ### Audio Features
-- **Spoken narration** — gTTS converts voice-over text to speech, timed to each scene
+- **Multi-language narration** — gTTS converts voice-over to speech in 10 languages (EN, HI, ES, FR, AR, PT, DE, JA, ZH, KO), timed to each scene
 - **Background music** — Original synthesised music from sine waves (no licensing issues)
 - **Custom audio** — Upload your own MP3/WAV/M4A (max 15 MB, looped/trimmed to fit)
 - **Smart mixing** — When both narration and music are active, music volume auto-lowers to 30%
+
+### Visual Enhancements
+- **QR code overlay** — Auto-generated QR code from contact details, embedded in the closing scene (top-right corner)
+- **Scannable by any phone** — QR encodes contact info (phone, email, CTA) for instant enquiry
 
 ### AI Features
 - **Grounding validation** — Every generated sentence is verified against user input; unknown words/numbers are rejected
@@ -202,7 +208,7 @@ src/
 tests/
   test_validators.py          40 tests — form fields and image validation
   test_script_generator.py    39 tests — scene structure, grounding, matching
-  test_video_generator.py     11 tests — text layout, rendering, MP4 export
+  test_video_generator.py     17 tests — text layout, rendering, QR code, narration lang, MP4 export
   test_llm_rewriter.py         6 tests — AI polish safety (fake LLM functions)
   test_app_ui.py               4 tests — headless Streamlit (full generate flow)
   conftest.py                 Shared fixtures
@@ -225,20 +231,20 @@ INTERVIEW_PREP.md             Interview preparation guide
 ## Testing
 
 ```bash
-# Run all 103 tests (~2 minutes, includes real video renders)
+# Run all 109 tests (~2 minutes, includes real video renders)
 python -m pytest tests -q
 
 # Fast tests only (a few seconds)
 python -m pytest tests -q -m "not slow"
 ```
 
-**Result: 103 passed, 0 failed**
+**Result: 109 passed, 0 failed**
 
 | Test File | Count | Coverage |
 |---|---|---|
 | `test_validators.py` | 40 | Form fields, image format/size/corruption, EXIF rotation |
 | `test_script_generator.py` | 39 | Scene structure, grounding check, feature matching, video length |
-| `test_video_generator.py` | 11 | Text overlay, Ken Burns zoom, crossfade, MP4 export |
+| `test_video_generator.py` | 17 | Text overlay, Ken Burns zoom, crossfade, QR code, narration language, MP4 export |
 | `test_llm_rewriter.py` | 6 | AI polish safety — invented words/numbers rejected, fallback on error |
 | `test_app_ui.py` | 4 | Headless Streamlit UI, full generate-and-download flow |
 
@@ -259,6 +265,8 @@ All configurable values are centralised in `src/config.py`:
 | `ZOOM_AMOUNT` | 0.06 | Ken Burns zoom (6%) |
 | `ASPECT_RATIOS` | 16:9, 9:16 | Landscape and vertical |
 | `CURRENCIES` | INR, USD, EUR, GBP, AED | Supported currencies |
+| `NARRATION_LANGUAGES` | 10 languages | Narration language options |
+| `QR_SIZE` | 180 px | QR code size (scales with resolution) |
 
 ---
 
@@ -272,7 +280,6 @@ All configurable values are centralised in `src/config.py`:
 
 ## Future Scope
 
-- Multi-language narration support (Hindi, Spanish, etc.)
 - AI-powered image recognition for automatic photo labelling
 - More video templates and themes
 - Watermark/logo overlay support

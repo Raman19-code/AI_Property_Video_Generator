@@ -8,8 +8,8 @@ from PIL import Image
 from src import config
 from src.script_generator import Scene, generate_script
 from src.validators import load_and_validate_images, validate_details
-from src.video_generator import (VideoGenerationError, build_overlay, fit_text, generate_video,
-                                 load_font, slugify, wrap_text)
+from src.video_generator import (VideoGenerationError, _generate_qr_image, build_overlay,
+                                 fit_text, generate_video, load_font, slugify, wrap_text)
 from tests.conftest import extract_frame, good_files, video_info
 
 
@@ -180,3 +180,53 @@ def test_users_own_short_audio_is_looped_and_bad_audio_is_friendly(tmp_path):
     with pytest.raises(VideoGenerationError, match="audio file"):
         generate_video(_images(4), script, tmp_path / "bad.mp4", audio_file=bad)
     assert list(tmp_path.glob("*.part*")) == [] and not (tmp_path / "bad.mp4").exists()
+
+
+# ------------------------------------------------------------------ QR code (fast)
+def test_qr_image_generated_for_valid_contact():
+    img = _generate_qr_image("+91 90000 00000\ninfo@example.com", (1280, 720))
+    assert img is not None
+    assert img.mode == "RGBA"
+    assert img.width == img.height  # square
+
+
+def test_qr_image_returns_none_for_empty_contact():
+    assert _generate_qr_image("", (1280, 720)) is None
+    assert _generate_qr_image("   ", (1280, 720)) is None
+    assert _generate_qr_image(None, (1280, 720)) is None
+
+
+def test_qr_scales_with_video_resolution():
+    standard = _generate_qr_image("test", (1280, 720))
+    large = _generate_qr_image("test", (1920, 1080))
+    assert standard is not None and large is not None
+    assert large.width > standard.width  # larger video -> larger QR
+
+
+@pytest.mark.slow
+def test_video_with_qr_code_renders_successfully(tmp_path):
+    d = _details()
+    script = generate_script(d, 4)
+    out = generate_video(_images(4), script, tmp_path / "qr.mp4", qr_code=True)
+    assert out.exists() and out.stat().st_size > 50_000
+    info = video_info(out)
+    assert "Video: h264" in info
+
+
+# ------------------------------------------------------------------ narration language (fast)
+def test_narration_languages_config():
+    """All configured languages have valid 2-5 char gTTS codes."""
+    from src.config import NARRATION_LANGUAGES
+    assert len(NARRATION_LANGUAGES) >= 5
+    assert "English" in NARRATION_LANGUAGES
+    assert "Hindi" in NARRATION_LANGUAGES
+    for label, code in NARRATION_LANGUAGES.items():
+        assert 2 <= len(code) <= 5, f"{label}: invalid code {code}"
+
+
+def test_generate_video_accepts_narration_lang_param(tmp_path):
+    """Smoke test: narration_lang param is accepted without error (narration=False)."""
+    d = _details()
+    script = generate_script(d, 4)
+    out = generate_video(_images(4), script, tmp_path / "lang.mp4", narration_lang="hi")
+    assert out.exists()

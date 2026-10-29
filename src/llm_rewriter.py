@@ -40,7 +40,7 @@ PROVIDERS = {
     "Gemini (free key from Google AI Studio)": "gemini",
     "Anthropic (Claude)": "anthropic",
 }
-DEFAULT_MODELS = {"gemini": "gemini-2.0-flash", "anthropic": "claude-haiku-5-5"}
+DEFAULT_MODELS = {"gemini": "gemini-1.5-flash", "anthropic": "claude-haiku-5-5"}
 
 CompleteFn = Callable[[str], str]
 

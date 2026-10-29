@@ -196,7 +196,8 @@ def build_overlay(scene: Scene, size: tuple[int, int]) -> Image.Image:
 # --------------------------------------------------------------------------- #
 
 
-def _make_scene_clip(img: Image.Image, scene: Scene, size: tuple[int, int], duration: float, reverse_zoom: bool):
+def _make_scene_clip(img: Image.Image, scene: Scene, size: tuple[int, int], duration: float, reverse_zoom: bool,
+                     qr_overlay: Image.Image | None = None):
     from moviepy import VideoClip
 
     W, H = size
@@ -206,6 +207,13 @@ def _make_scene_clip(img: Image.Image, scene: Scene, size: tuple[int, int], dura
     bw, bh = base.size
 
     overlay = build_overlay(scene, size)
+    # paste QR code onto the overlay if provided (bottom-right corner)
+    if qr_overlay is not None:
+        u = W / (1280 if W >= H else 720)
+        margin = int(config.QR_MARGIN * u)
+        qr_x = W - qr_overlay.width - margin
+        qr_y = int(margin * 1.5)  # near the top-right (text is centered/bottom)
+        overlay.paste(qr_overlay, (qr_x, qr_y), qr_overlay)
     overlay_rgb, overlay_mask = overlay.convert("RGB"), overlay.getchannel("A")
 
     def make_frame(t: float) -> np.ndarray:
@@ -272,6 +280,31 @@ def prune_old_outputs(folder: Path = config.OUTPUT_DIR, keep: int = config.KEEP_
         pass   # cleaning is a nicety, never a reason to fail
 
 
+def _generate_qr_image(contact: str, size: tuple[int, int]) -> Image.Image | None:
+    """Generate a QR code image from contact text. Returns an RGBA image or None on failure."""
+    try:
+        import qrcode
+        from qrcode.image.pil import PilImage
+    except ImportError:
+        return None
+    if not contact or not contact.strip():
+        return None
+    W, H = size
+    u = W / (1280 if W >= H else 720)
+    qr_px = int(config.QR_SIZE * u)
+    qr = qrcode.QRCode(
+        version=None,  # auto-size
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=config.QR_BOX_SIZE,
+        border=config.QR_BORDER,
+    )
+    qr.add_data(contact)
+    qr.make(fit=True)
+    img = qr.make_image(image_factory=PilImage, fill_color="white", back_color=(8, 14, 28))
+    img = img.convert("RGBA").resize((qr_px, qr_px), Image.LANCZOS)
+    return img
+
+
 def generate_video(
     images: Sequence[Image.Image],
     script: VideoScript,
@@ -281,6 +314,8 @@ def generate_video(
     music: bool = False,
     audio_file: str | os.PathLike | None = None,
     narration: bool = False,
+    narration_lang: str = "en",
+    qr_code: bool = False,
 ) -> Path:
     """Render the MP4 (optionally with a generated background-music track and/or spoken narration). Raises VideoGenerationError (friendly message) on any failure."""
     from moviepy import CompositeVideoClip, vfx
@@ -305,10 +340,25 @@ def generate_video(
     wav = out.with_name(f"{out.stem}.part.wav")
     narration_wav = out.with_name(f"{out.stem}.narration.wav")
     try:
+        # generate QR code for closing scene if requested
+        qr_img = None
+        if qr_code:
+            # build QR data from contact + property info in the closing scene
+            closing = script.scenes[-1] if script.scenes else None
+            qr_text_parts = []
+            if closing and closing.subtitle:
+                qr_text_parts.append(closing.subtitle)
+            if closing and closing.lines:
+                qr_text_parts.extend(closing.lines)
+            qr_data = "\n".join(qr_text_parts).strip()
+            if qr_data:
+                qr_img = _generate_qr_image(qr_data, (W, H))
+
         report(0.02, "Preparing scenes...")
         step = script.scene_seconds
         for i, (img, scene) in enumerate(zip(images, script.scenes)):
-            clip = _make_scene_clip(img, scene, (W, H), step + config.FADE_SECONDS, reverse_zoom=bool(i % 2))
+            clip = _make_scene_clip(img, scene, (W, H), step + config.FADE_SECONDS, reverse_zoom=bool(i % 2),
+                                    qr_overlay=qr_img if (i == n - 1) else None)
             clip = clip.with_start(i * step)
             if i > 0:
                 clip = clip.with_effects([vfx.CrossFadeIn(config.FADE_SECONDS)])
@@ -322,7 +372,7 @@ def generate_video(
             from moviepy import AudioFileClip, CompositeAudioClip, afx
             try:
                 from .narration import generate_narration
-                generate_narration(script, narration_wav)
+                generate_narration(script, narration_wav, lang=narration_lang)
                 narration_audio = AudioFileClip(str(narration_wav))
                 if narration_audio.duration > final.duration:
                     narration_audio = narration_audio.subclipped(0, final.duration)

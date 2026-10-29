@@ -69,3 +69,23 @@ KEEP_LAST_OUTPUTS = 15        # old generated videos are cleaned up automaticall
 # Optional user-supplied background audio
 AUDIO_EXTENSIONS = (".mp3", ".wav", ".m4a")
 MAX_AUDIO_BYTES = 15 * 1024 * 1024
+
+# ---------- Narration languages (gTTS language codes) ----------
+NARRATION_LANGUAGES = {
+    "English": "en",
+    "Hindi": "hi",
+    "Spanish": "es",
+    "French": "fr",
+    "Arabic": "ar",
+    "Portuguese": "pt",
+    "German": "de",
+    "Japanese": "ja",
+    "Chinese (Mandarin)": "zh-CN",
+    "Korean": "ko",
+}
+
+# ---------- QR code settings ----------
+QR_SIZE = 180          # pixels (square), scaled to video resolution
+QR_MARGIN = 30         # pixels from the edge of the video frame
+QR_BOX_SIZE = 6        # size of each QR module
+QR_BORDER = 2          # quiet zone around the QR code

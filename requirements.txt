@@ -5,3 +5,4 @@ pillow>=10.1,<12
 numpy>=1.26
 pytest>=8
 gTTS>=2.5
+qrcode>=8.0

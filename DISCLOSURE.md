@@ -8,8 +8,8 @@
 |---|---|
 | Is a large language model used? | Only in the optional AI polish, never by default |
 | Are any API keys needed? | No, except for the optional AI polish (user's own key, typed in the app or in the `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` environment variable). No key is in the source code |
-| Does the app send data to the internet? | Not by default. With AI polish on, the typed property facts and one sentence per scene are sent to the chosen provider. Photos and property details stay on your computer. Streamlit's anonymous usage statistics are switched off in `.streamlit/config.toml` |
-| Narration / text-to-speech? | Not implemented. The voice-over script is generated as text only |
+| Does the app send data to the internet? | Not by default. With AI polish on, the typed property facts and one sentence per scene are sent to the chosen provider. With narration on, voice-over text is sent to Google's TTS endpoint. Photos and property details stay on your computer. Streamlit's anonymous usage statistics are switched off in `.streamlit/config.toml` |
+| Narration / text-to-speech? | Optional (off by default). Uses **gTTS** (Google Text-to-Speech) — a free service that calls Google Translate's TTS endpoint. Only the voice-over text is sent; no photos or property details. Requires internet when enabled. Implemented in `src/narration.py` |
 | Background music? | Optional (off by default); users can also upload their own audio, which stays on their computer and is deleted after rendering. The tune is synthesised from sine waves by `src/music.py`, so no third-party music or licence is involved |
 
 ### How the "AI" part works
@@ -33,6 +33,7 @@ This was chosen on purpose: it makes it impossible for the generator to invent a
 | NumPy | Pixel arithmetic for the text panel and video frames | BSD-3-Clause |
 | imageio / imageio-ffmpeg | Pulls in an FFmpeg executable used by MoviePy | BSD-2-Clause (wrapper) |
 | FFmpeg (with libx264) | H.264 video encoding. Downloaded as a binary by imageio-ffmpeg | FFmpeg builds that include libx264 are GPL-licensed. Fine for this assignment; check the licence before commercial redistribution |
+| gTTS | Google Text-to-Speech for spoken narration (optional) | MIT |
 | proglog | Progress reporting from MoviePy | MIT |
 | pytest | Automated tests (development only) | MIT |
 

@@ -280,8 +280,9 @@ def generate_video(
     progress: ProgressCallback | None = None,
     music: bool = False,
     audio_file: str | os.PathLike | None = None,
+    narration: bool = False,
 ) -> Path:
-    """Render the MP4 (optionally with a generated background-music track). Raises VideoGenerationError (friendly message) on any failure."""
+    """Render the MP4 (optionally with a generated background-music track and/or spoken narration). Raises VideoGenerationError (friendly message) on any failure."""
     from moviepy import CompositeVideoClip, vfx
 
     report = progress or (lambda frac, msg: None)
@@ -300,7 +301,9 @@ def generate_video(
     tmp = out.with_name(f"{out.stem}.part{out.suffix or '.mp4'}")
 
     clips, final, audio = [], None, None
+    narration_audio = None
     wav = out.with_name(f"{out.stem}.part.wav")
+    narration_wav = out.with_name(f"{out.stem}.narration.wav")
     try:
         report(0.02, "Preparing scenes...")
         step = script.scene_seconds
@@ -313,6 +316,21 @@ def generate_video(
             report(0.02 + 0.08 * (i + 1) / n, f"Prepared scene {i + 1} of {n}")
 
         final = CompositeVideoClip(clips, size=(W, H))
+        has_audio = False
+        if narration:
+            report(0.08, "Generating spoken narration (needs internet)...")
+            from moviepy import AudioFileClip, CompositeAudioClip, afx
+            try:
+                from .narration import generate_narration
+                generate_narration(script, narration_wav)
+                narration_audio = AudioFileClip(str(narration_wav))
+                if narration_audio.duration > final.duration:
+                    narration_audio = narration_audio.subclipped(0, final.duration)
+                has_audio = True
+            except Exception as exc:  # noqa: BLE001
+                raise VideoGenerationError(
+                    f"Narration failed ({type(exc).__name__}). Check your internet connection. "
+                    "You can also try without narration.") from exc
         if music or audio_file:
             from moviepy import AudioFileClip, afx
             if audio_file:                      # the user's own track: loop if short, cut if long
@@ -330,13 +348,24 @@ def generate_video(
                 synthesize_music(final.duration, wav)
                 audio = AudioFileClip(str(wav))
             audio = audio.with_effects([afx.AudioFadeIn(1.0), afx.AudioFadeOut(2.0)])
+            has_audio = True
+        # combine narration + music/audio if both exist
+        if narration_audio is not None and audio is not None:
+            from moviepy import CompositeAudioClip
+            # lower music volume when narration is present
+            audio = audio.with_effects([afx.MultiplyVolume(0.3)])
+            combined_audio = CompositeAudioClip([narration_audio, audio])
+            final = final.with_audio(combined_audio)
+        elif narration_audio is not None:
+            final = final.with_audio(narration_audio)
+        elif audio is not None:
             final = final.with_audio(audio)
         report(0.10, "Encoding video (this takes a little while)...")
         final.write_videofile(
             str(tmp),
             fps=config.FPS,
             codec="libx264",
-            audio=bool(music or audio_file),
+            audio=has_audio,
             audio_codec="aac",
             preset="veryfast",
             pixel_format="yuv420p",
@@ -366,7 +395,10 @@ def generate_video(
     finally:
         if audio is not None:
             audio.close()
+        if narration_audio is not None:
+            narration_audio.close()
         wav.unlink(missing_ok=True)
+        narration_wav.unlink(missing_ok=True)
         for c in clips:
             c.close()
         if final is not None:
